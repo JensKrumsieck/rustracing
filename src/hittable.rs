@@ -1,4 +1,7 @@
-use crate::ray::Ray;
+use crate::{
+    interval::{interval, Interval},
+    ray::Ray,
+};
 
 #[derive(Default, Clone, Copy)]
 pub struct HitRecord {
@@ -20,7 +23,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool;
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
 }
 
 pub enum HittableEnum {
@@ -28,9 +31,9 @@ pub enum HittableEnum {
 }
 
 impl Hittable for HittableEnum {
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         match self {
-            HittableEnum::Sphere(sphere) => sphere.hit(r, ray_tmin, ray_tmax, rec),
+            HittableEnum::Sphere(sphere) => sphere.hit(r, ray_t, rec),
         }
     }
 }
@@ -38,14 +41,14 @@ impl Hittable for HittableEnum {
 pub type HittableList = Vec<HittableEnum>;
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         let mut tmp = HitRecord::default();
         let mut hit_anything = false;
 
-        let mut closest_so_far = ray_tmax;
+        let mut closest_so_far = ray_t.max;
 
         for object in self.iter() {
-            if object.hit(r, ray_tmin, closest_so_far, &mut tmp) {
+            if object.hit(r, interval(ray_t.min, closest_so_far), &mut tmp) {
                 hit_anything = true;
                 closest_so_far = tmp.t;
                 *rec = tmp;
@@ -61,7 +64,7 @@ pub struct Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, r: &Ray, ray_tmin: f32, ray_tmax: f32, rec: &mut HitRecord) -> bool {
+    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
         let oc = self.center - r.origin;
         let a = r.direction.length_squared();
         let h = r.direction.dot(oc);
@@ -74,9 +77,9 @@ impl Hittable for Sphere {
         }
         let sqrtd = discriminant.sqrt();
         let mut root = (h - sqrtd) / a;
-        if root <= ray_tmin || ray_tmax <= root {
+        if !ray_t.surrounds(root) {
             root = (h + sqrtd) / a;
-            if root <= ray_tmin || ray_tmax <= root {
+            if !ray_t.surrounds(root) {
                 return false;
             }
         }
@@ -91,8 +94,5 @@ impl Hittable for Sphere {
 }
 
 pub fn sphere(center: glam::Vec3, radius: f32) -> HittableEnum {
-    HittableEnum::Sphere(Sphere {
-        center,
-        radius,
-    })
+    HittableEnum::Sphere(Sphere { center, radius })
 }

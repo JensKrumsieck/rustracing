@@ -2,6 +2,7 @@ use core::f32;
 use rustracing::{
     color::{u8_color, Color},
     hittable::{sphere, HitRecord, Hittable, HittableList},
+    interval::interval,
     ray::Ray,
 };
 use std::{
@@ -90,7 +91,7 @@ fn main() {
 
 fn ray_color(r: &Ray, world: &HittableList) -> Color {
     let mut rec = HitRecord::default();
-    if world.hit(r, 0.0, f32::INFINITY, &mut rec) {
+    if world.hit(r, interval(0.0, f32::INFINITY), &mut rec) {
         return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
     }
 
