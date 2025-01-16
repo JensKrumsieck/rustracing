@@ -54,8 +54,6 @@ impl Camera {
 
         let mut data = vec![0u8; (self.image_width * self.image_height * 3) as usize];
         for y in 0..self.image_height {
-            print!("\t\t\tRemaining lines: {}   \r", self.image_height - y);
-            io::stdout().flush()?;
             for x in 0..self.image_width {
                 let index = ((y * self.image_width + x) * 3) as usize;
 
