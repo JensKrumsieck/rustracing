@@ -1,0 +1,10 @@
+[package]
+name = "rustracing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+glam = "0.29.2"
+png = "0.17.16"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
