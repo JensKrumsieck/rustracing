@@ -1,7 +1,7 @@
 use core::f32;
 use rustracing::{
     color::{u8_color, Color},
-    hittable::{HitRecord, Hittable, Sphere},
+    hittable::{sphere, HitRecord, Hittable, HittableList},
     ray::Ray,
 };
 use std::{
@@ -17,6 +17,12 @@ fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = (image_width as f32 / aspect_ratio) as u32;
+
+    // World
+    let world: HittableList = vec![
+        sphere(glam::vec3(0.0, 0.0, -1.0), 0.5),
+        sphere(glam::vec3(0.0, -100.5, -1.0), 100.0),
+    ];
 
     // Camera
     let focal_lenght = 1.0;
@@ -65,7 +71,7 @@ fn main() {
                 pixel00_loc + (x as f32 * pixel_delta_u) + (y as f32 * pixel_delta_v);
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(&r, &world);
             //end rendering
 
             let pixels = u8_color(pixel_color);
@@ -82,13 +88,9 @@ fn main() {
     tracing::debug!("Wrote image to disk");
 }
 
-fn ray_color(r: &Ray) -> Color {
-    let s = Sphere {
-        center: glam::vec3(0.0, 0.0, -1.0),
-        radius: 0.5,
-    };
+fn ray_color(r: &Ray, world: &HittableList) -> Color {
     let mut rec = HitRecord::default();
-    if s.hit(r, 0.0, f32::INFINITY, &mut rec) {
+    if world.hit(r, 0.0, f32::INFINITY, &mut rec) {
         return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
     }
 
