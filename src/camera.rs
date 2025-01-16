@@ -1,14 +1,10 @@
-use std::{
-    fs::File,
-    io::{self, BufWriter, Write},
-};
-
 use crate::{
     color::{u8_color, Color},
     hittable::{HitRecord, Hittable, HittableList},
     interval::interval,
     ray::Ray,
 };
+use std::{fs::File, io::BufWriter};
 
 #[derive(Debug)]
 pub struct Camera {
