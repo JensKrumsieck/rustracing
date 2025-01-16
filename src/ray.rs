@@ -8,7 +8,7 @@ impl Ray {
         Ray { origin, direction }
     }
 
-    pub fn at(self, t: f32) -> glam::Vec3 {
+    pub fn at(&self, t: f32) -> glam::Vec3 {
         self.origin + t * self.direction
     }
 }
