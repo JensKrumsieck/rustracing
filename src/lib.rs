@@ -5,6 +5,7 @@ pub mod camera;
 pub mod color;
 pub mod hittable;
 pub mod interval;
+pub mod material;
 pub mod ray;
 
 pub fn degrees_to_radians(degrees: f32) -> f32 {
@@ -49,4 +50,13 @@ pub fn random_on_hemisphere(normal: glam::Vec3) -> glam::Vec3 {
     } else {
         -on_unit_sphere
     }
+}
+
+pub fn vec_near_zero(vec: glam::Vec3) -> bool {
+    let s = 1e-8;
+    (vec.x.abs() < s) && (vec.y.abs() < s) && (vec.z.abs() < s)
+}
+
+pub fn reflect(v: glam::Vec3, n: glam::Vec3) -> glam::Vec3 {
+    v - 2.0 * v.dot(n) * n
 }

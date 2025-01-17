@@ -1,12 +1,14 @@
 use crate::{
     interval::{interval, Interval},
+    material::MaterialEnum,
     ray::Ray,
 };
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone)]
 pub struct HitRecord {
     pub p: glam::Vec3,
     pub normal: glam::Vec3,
+    pub mat: MaterialEnum,
     pub t: f32,
     pub front_face: bool,
 }
@@ -51,7 +53,7 @@ impl Hittable for HittableList {
             if object.hit(r, interval(ray_t.min, closest_so_far), &mut tmp) {
                 hit_anything = true;
                 closest_so_far = tmp.t;
-                *rec = tmp;
+                *rec = tmp.clone();
             }
         }
         hit_anything
@@ -61,6 +63,7 @@ impl Hittable for HittableList {
 pub struct Sphere {
     pub center: glam::Vec3,
     pub radius: f32,
+    pub mat: MaterialEnum,
 }
 
 impl Hittable for Sphere {
@@ -88,11 +91,15 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(r, outward_normal);
-
+        rec.mat = self.mat;
         true
     }
 }
 
-pub fn sphere(center: glam::Vec3, radius: f32) -> HittableEnum {
-    HittableEnum::Sphere(Sphere { center, radius })
+pub fn sphere(center: glam::Vec3, radius: f32, mat: MaterialEnum) -> HittableEnum {
+    HittableEnum::Sphere(Sphere {
+        center,
+        radius,
+        mat,
+    })
 }

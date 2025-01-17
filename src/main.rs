@@ -1,6 +1,8 @@
 use rustracing::{
     camera::Camera,
+    color::Color,
     hittable::{sphere, HittableList},
+    material::{lambertian, metal},
 };
 use std::{fs::File, io::BufWriter, path::Path, time::Instant};
 
@@ -12,10 +14,19 @@ fn main() {
     let samples_per_pixel = 100;
     let max_depth = 10;
     let mut camera = Camera::new(aspect_ratio, image_width, samples_per_pixel, max_depth);
+
+    // Materials
+    let mat_ground = lambertian(Color::new(0.8, 0.8, 0.0));
+    let mat_center = lambertian(Color::new(0.1, 0.2, 0.5));
+    let mat_left = metal(Color::new(0.8, 0.8, 0.8));
+    let mat_right = metal(Color::new(0.8, 0.6, 0.2));
+
     // World
     let world: HittableList = vec![
-        sphere(glam::vec3(0.0, 0.0, -1.0), 0.5),
-        sphere(glam::vec3(0.0, -100.5, -1.0), 100.0),
+        sphere(glam::vec3(0.0, -100.5, -1.0), 100.0, mat_ground),
+        sphere(glam::vec3(0.0, 0.0, -1.2), 0.5, mat_center),
+        sphere(glam::vec3(-1.0, 0.0, -1.0), 0.5, mat_left),
+        sphere(glam::vec3(1.0, 0.0, -1.0), 0.5, mat_right),
     ];
 
     tracing::info!(

@@ -2,7 +2,8 @@ use crate::{
     color::{u8_color, Color},
     hittable::{HitRecord, Hittable, HittableList},
     interval::interval,
-    random_float, random_unit_vec,
+    material::Material,
+    random_float,
     ray::Ray,
 };
 use std::{fs::File, io::BufWriter};
@@ -120,8 +121,12 @@ fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
     }
     let mut rec = HitRecord::default();
     if world.hit(r, interval(0.001, f32::INFINITY), &mut rec) {
-        let direction = rec.normal + random_unit_vec();
-        return 0.5 * ray_color(&Ray::new(rec.p, direction), depth - 1, world);
+        let mut scattered = Ray::default();
+        let mut attenuation = Color::default();
+        if rec.mat.scatter(r, &rec, &mut attenuation, &mut scattered) {
+            return attenuation * ray_color(&scattered, depth - 1, world);
+        }
+        return Color::default();
     }
 
     let unit_direction = r.direction.normalize();
