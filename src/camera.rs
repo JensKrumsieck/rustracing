@@ -4,7 +4,7 @@ use crate::{
     hittable::{HitRecord, Hittable, HittableList},
     interval::interval,
     material::Material,
-    random_float,
+    random_float, random_in_unit_disk,
     ray::Ray,
 };
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -20,6 +20,8 @@ pub struct Camera {
     pub lookfrom: glam::Vec3,
     pub lookat: glam::Vec3,
     pub vup: glam::Vec3,
+    pub defocus_angle: f32,
+    pub focus_dist: f32,
 
     image_height: u32,
     center: glam::Vec3,
@@ -30,6 +32,8 @@ pub struct Camera {
     u: glam::Vec3,
     v: glam::Vec3,
     w: glam::Vec3,
+    defocus_disk_u: glam::Vec3,
+    defocus_disk_v: glam::Vec3,
 }
 
 impl Camera {
@@ -46,18 +50,22 @@ impl Camera {
             samples_per_pixel,
             max_depth,
             vfov,
+            lookfrom: Default::default(),
+            lookat: Default::default(),
+            vup: glam::vec3(0.0, 1.0, 0.0),
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
             image_height: Default::default(),
             center: Default::default(),
             pixel00_loc: Default::default(),
             pixel_delta_u: Default::default(),
             pixel_delta_v: Default::default(),
             pixel_samples_scale: Default::default(),
-            lookfrom: Default::default(),
-            lookat: Default::default(),
-            vup: glam::vec3(0.0, 1.0, 0.0),
             u: Default::default(),
             v: Default::default(),
             w: Default::default(),
+            defocus_disk_u: Default::default(),
+            defocus_disk_v: Default::default(),
         }
     }
 
@@ -101,15 +109,14 @@ impl Camera {
 
     pub fn init(&mut self) {
         self.image_height = (self.image_width as f32 / self.aspect_ratio) as u32;
-        
+
         self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f32;
-        
+
         self.center = self.lookfrom;
 
-        let focal_length = (self.lookfrom - self.lookat).length();
         let theta = degrees_to_radians(self.vfov);
         let h = (theta / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_dist;
         let viewport_width = viewport_height * (self.image_width as f32 / self.image_height as f32);
 
         // calculate unit basis vectors
@@ -127,9 +134,14 @@ impl Camera {
 
         //calulatoe upper left pixel
         let viewport_upper_left =
-            self.center - (focal_length * self.w) - (viewport_u / 2.0) - (viewport_v / 2.0);
+            self.center - (self.focus_dist * self.w) - (viewport_u / 2.0) - (viewport_v / 2.0);
 
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
+
+        //defocus
+        let defocus_radius = self.focus_dist * (degrees_to_radians(self.defocus_angle / 2.0)).tan();
+        self.defocus_disk_u = self.u * defocus_radius;
+        self.defocus_disk_v = self.v * defocus_radius;
     }
 
     fn get_ray(&self, i: u32, j: u32) -> Ray {
@@ -139,10 +151,19 @@ impl Camera {
             + ((i as f32 + offset.x) * self.pixel_delta_u)
             + ((j as f32 + offset.y) * self.pixel_delta_v);
 
-        let origin = self.center;
+        let origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
         let direction = pixel_sample - origin;
 
         Ray { origin, direction }
+    }
+
+    fn defocus_disk_sample(&self) -> glam::Vec3 {
+        let p = random_in_unit_disk();
+        self.center + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
 }
 fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {

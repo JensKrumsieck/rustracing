@@ -52,6 +52,19 @@ pub fn random_on_hemisphere(normal: glam::Vec3) -> glam::Vec3 {
     }
 }
 
+pub fn random_in_unit_disk() -> glam::Vec3 {
+    loop {
+        let p = glam::vec3(
+            random_float_minmax(-1.0, 1.0),
+            random_float_minmax(-1.0, 1.0),
+            0.0,
+        );
+        if p.length_squared() < 1.0 {
+            return p;
+        }
+    }
+}
+
 pub fn vec_near_zero(vec: glam::Vec3) -> bool {
     let s = 1e-8;
     (vec.x.abs() < s) && (vec.y.abs() < s) && (vec.z.abs() < s)
