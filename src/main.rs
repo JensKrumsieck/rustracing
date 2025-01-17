@@ -9,7 +9,8 @@ fn main() {
 
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
-    let mut camera = Camera::new(aspect_ratio, image_width);
+    let samples_per_pixel = 10;
+    let mut camera = Camera::new(aspect_ratio, image_width, samples_per_pixel);
     // World
     let world: HittableList = vec![
         sphere(glam::vec3(0.0, 0.0, -1.0), 0.5),
