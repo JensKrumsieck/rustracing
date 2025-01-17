@@ -2,7 +2,7 @@ use crate::{
     color::{u8_color, Color},
     hittable::{HitRecord, Hittable, HittableList},
     interval::interval,
-    random_float,
+    random_float, random_unit_vec,
     ray::Ray,
 };
 use std::{fs::File, io::BufWriter};
@@ -12,6 +12,7 @@ pub struct Camera {
     pub aspect_ratio: f32,
     pub image_width: u32,
     pub samples_per_pixel: u32,
+    pub max_depth: i32,
 
     image_height: u32,
     center: glam::Vec3,
@@ -22,11 +23,17 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, image_width: u32, samples_per_pixel: u32) -> Self {
+    pub fn new(
+        aspect_ratio: f32,
+        image_width: u32,
+        samples_per_pixel: u32,
+        max_depth: i32,
+    ) -> Self {
         Camera {
             aspect_ratio,
             image_width,
             samples_per_pixel,
+            max_depth,
             image_height: Default::default(),
             center: Default::default(),
             pixel00_loc: Default::default(),
@@ -34,11 +41,6 @@ impl Camera {
             pixel_delta_v: Default::default(),
             pixel_samples_scale: Default::default(),
         }
-    }
-
-    /// Get Image dimensions as Tuple (Width, Height)
-    pub fn get_dimensions(&self) -> (u32, u32) {
-        (self.image_width, self.image_height)
     }
 
     pub fn render(
@@ -62,7 +64,7 @@ impl Camera {
                 let mut pixel_color = glam::vec3(0.0, 0.0, 0.0);
                 for _ in 0..self.samples_per_pixel {
                     let r = self.get_ray(x, y);
-                    pixel_color += ray_color(&r, world);
+                    pixel_color += ray_color(&r, self.max_depth, world);
                 }
                 //end rendering
 
@@ -112,10 +114,14 @@ impl Camera {
         Ray { origin, direction }
     }
 }
-fn ray_color(r: &Ray, world: &HittableList) -> Color {
+fn ray_color(r: &Ray, depth: i32, world: &HittableList) -> Color {
+    if depth < 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
     let mut rec = HitRecord::default();
-    if world.hit(r, interval(0.0, f32::INFINITY), &mut rec) {
-        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
+    if world.hit(r, interval(0.001, f32::INFINITY), &mut rec) {
+        let direction = rec.normal + random_unit_vec();
+        return 0.5 * ray_color(&Ray::new(rec.p, direction), depth - 1, world);
     }
 
     let unit_direction = r.direction.normalize();

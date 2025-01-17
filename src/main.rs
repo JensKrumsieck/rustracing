@@ -9,16 +9,19 @@ fn main() {
 
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
-    let samples_per_pixel = 10;
-    let mut camera = Camera::new(aspect_ratio, image_width, samples_per_pixel);
+    let samples_per_pixel = 100;
+    let max_depth = 10;
+    let mut camera = Camera::new(aspect_ratio, image_width, samples_per_pixel, max_depth);
     // World
     let world: HittableList = vec![
         sphere(glam::vec3(0.0, 0.0, -1.0), 0.5),
         sphere(glam::vec3(0.0, -100.5, -1.0), 100.0),
     ];
 
-    let (width, height) = camera.get_dimensions();
-    tracing::info!("Rendering Image with width: {width} & height: {height}");
+    tracing::info!(
+        "Rendering Image with width: {image_width} & height: {}",
+        (image_width as f32 * aspect_ratio) as u32
+    );
 
     let path = Path::new("output.png");
     let file = File::create(path).unwrap_or_else(|_| panic!("Could not create File {path:?}"));
