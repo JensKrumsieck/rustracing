@@ -1,3 +1,5 @@
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::{
     color::{u8_color, Color},
     hittable::{HitRecord, Hittable, HittableList},
@@ -6,7 +8,7 @@ use crate::{
     random_float,
     ray::Ray,
 };
-use std::{fs::File, io::BufWriter};
+use std::{fs::File, io::BufWriter, sync::Mutex};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -56,8 +58,9 @@ impl Camera {
         encoder.set_depth(png::BitDepth::Eight);
         let mut writer = encoder.write_header()?;
 
-        let mut data = vec![0u8; (self.image_width * self.image_height * 3) as usize];
-        for y in 0..self.image_height {
+        let data = vec![0u8; (self.image_width * self.image_height * 3) as usize];
+        let data = Mutex::new(data);
+        (0..self.image_height).into_par_iter().for_each(|y| {
             for x in 0..self.image_width {
                 let index = ((y * self.image_width + x) * 3) as usize;
 
@@ -70,12 +73,13 @@ impl Camera {
                 //end rendering
 
                 let pixels = u8_color(pixel_color * self.pixel_samples_scale);
+                let mut data = data.lock().unwrap();
                 data[index] = pixels.0;
                 data[index + 1] = pixels.1;
                 data[index + 2] = pixels.2;
             }
-        }
-        writer.write_image_data(&data)?;
+        });
+        writer.write_image_data(&data.lock().unwrap())?;
 
         Ok(())
     }
