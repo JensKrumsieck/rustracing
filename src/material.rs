@@ -1,10 +1,4 @@
-use crate::{
-    color::Color,
-    hittable::HitRecord,
-    random_unit_vec,
-    ray::Ray,
-    reflect, vec_near_zero,
-};
+use crate::{color::Color, hittable::HitRecord, random_unit_vec, ray::Ray, reflect, vec_near_zero};
 
 pub trait Material {
     fn scatter(
@@ -78,6 +72,7 @@ pub fn lambertian(albedo: Color) -> MaterialEnum {
 #[derive(Default, Clone, Copy)]
 pub struct Metal {
     pub albedo: Color,
+    pub fuzz: f32,
 }
 
 impl Material for Metal {
@@ -88,13 +83,15 @@ impl Material for Metal {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
-        let reflected = reflect(r_in.direction, rec.normal);
+        let reflected =
+            reflect(r_in.direction, rec.normal).normalize() + (self.fuzz * random_unit_vec());
         *scattered = Ray::new(rec.p, reflected);
         *attenuation = self.albedo;
-        true
+
+        scattered.direction.dot(rec.normal) > 0.0
     }
 }
 
-pub fn metal(albedo: Color) -> MaterialEnum {
-    MaterialEnum::Metal(Metal { albedo })
+pub fn metal(albedo: Color, fuzz: f32) -> MaterialEnum {
+    MaterialEnum::Metal(Metal { albedo, fuzz })
 }

@@ -18,8 +18,8 @@ fn main() {
     // Materials
     let mat_ground = lambertian(Color::new(0.8, 0.8, 0.0));
     let mat_center = lambertian(Color::new(0.1, 0.2, 0.5));
-    let mat_left = metal(Color::new(0.8, 0.8, 0.8));
-    let mat_right = metal(Color::new(0.8, 0.6, 0.2));
+    let mat_left = metal(Color::new(0.8, 0.8, 0.8), 0.3);
+    let mat_right = metal(Color::new(0.8, 0.6, 0.2), 1.0);
 
     // World
     let world: HittableList = vec![
