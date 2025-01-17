@@ -1,13 +1,13 @@
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
 use crate::{
     color::{u8_color, Color},
+    degrees_to_radians,
     hittable::{HitRecord, Hittable, HittableList},
     interval::interval,
     material::Material,
     random_float,
     ray::Ray,
 };
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::{fs::File, io::BufWriter, sync::Mutex};
 
 #[derive(Debug)]
@@ -16,6 +16,10 @@ pub struct Camera {
     pub image_width: u32,
     pub samples_per_pixel: u32,
     pub max_depth: i32,
+    pub vfov: f32,
+    pub lookfrom: glam::Vec3,
+    pub lookat: glam::Vec3,
+    pub vup: glam::Vec3,
 
     image_height: u32,
     center: glam::Vec3,
@@ -23,6 +27,9 @@ pub struct Camera {
     pixel_delta_u: glam::Vec3,
     pixel_delta_v: glam::Vec3,
     pixel_samples_scale: f32,
+    u: glam::Vec3,
+    v: glam::Vec3,
+    w: glam::Vec3,
 }
 
 impl Camera {
@@ -31,18 +38,26 @@ impl Camera {
         image_width: u32,
         samples_per_pixel: u32,
         max_depth: i32,
+        vfov: f32,
     ) -> Self {
         Camera {
             aspect_ratio,
             image_width,
             samples_per_pixel,
             max_depth,
+            vfov,
             image_height: Default::default(),
             center: Default::default(),
             pixel00_loc: Default::default(),
             pixel_delta_u: Default::default(),
             pixel_delta_v: Default::default(),
             pixel_samples_scale: Default::default(),
+            lookfrom: Default::default(),
+            lookat: Default::default(),
+            vup: glam::vec3(0.0, 1.0, 0.0),
+            u: Default::default(),
+            v: Default::default(),
+            w: Default::default(),
         }
     }
 
@@ -86,23 +101,34 @@ impl Camera {
 
     pub fn init(&mut self) {
         self.image_height = (self.image_width as f32 / self.aspect_ratio) as u32;
-
+        
         self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f32;
+        
+        self.center = self.lookfrom;
 
-        let focal_lenght = 1.0;
-        let viewport_height = 2.0;
+        let focal_length = (self.lookfrom - self.lookat).length();
+        let theta = degrees_to_radians(self.vfov);
+        let h = (theta / 2.0).tan();
+        let viewport_height = 2.0 * h * focal_length;
         let viewport_width = viewport_height * (self.image_width as f32 / self.image_height as f32);
-        self.center = glam::vec3(0.0, 0.0, 0.0);
+
+        // calculate unit basis vectors
+        self.w = (self.lookfrom - self.lookat).normalize();
+        self.u = self.vup.cross(self.w).normalize();
+        self.v = self.w.cross(self.u);
+
         // calculate vectors acrooss the horizontal and vertical viewport edges
-        let viewport_u = glam::vec3(viewport_width, 0.0, 0.0);
-        let viewport_v = glam::vec3(0.0, -viewport_height, 0.0);
+        let viewport_u = viewport_width * self.u;
+        let viewport_v = viewport_height * -self.v;
+
         // calculate horizontal and vertical delta vectors
         self.pixel_delta_u = viewport_u / self.image_width as f32;
         self.pixel_delta_v = viewport_v / self.image_height as f32;
 
         //calulatoe upper left pixel
         let viewport_upper_left =
-            self.center - glam::vec3(0.0, 0.0, focal_lenght) - viewport_u / 2.0 - viewport_v / 2.0;
+            self.center - (focal_length * self.w) - (viewport_u / 2.0) - (viewport_v / 2.0);
+
         self.pixel00_loc = viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 

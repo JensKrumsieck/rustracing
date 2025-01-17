@@ -13,7 +13,18 @@ fn main() {
     let image_width = 400;
     let samples_per_pixel = 100;
     let max_depth = 10;
-    let mut camera = Camera::new(aspect_ratio, image_width, samples_per_pixel, max_depth);
+    let vfov = 20.0;
+    let mut camera = Camera::new(
+        aspect_ratio,
+        image_width,
+        samples_per_pixel,
+        max_depth,
+        vfov,
+    );
+
+    camera.lookfrom = glam::vec3(-2.0, 2.0, 1.0);
+    camera.lookat = glam::vec3(0.0, 0.0, -1.0);
+
 
     // Materials
     let mat_ground = lambertian(Color::new(0.8, 0.8, 0.0));
