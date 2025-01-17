@@ -11,9 +11,9 @@ fn main() {
     tracing_subscriber::fmt::init();
 
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 1200;
-    let samples_per_pixel = 500;
-    let max_depth = 50;
+    let image_width = 600;
+    let samples_per_pixel = 50;
+    let max_depth = 10;
     let vfov = 20.0;
     let mut camera = Camera::new(
         aspect_ratio,
@@ -29,7 +29,7 @@ fn main() {
     camera.focus_dist = 10.0;
 
     // Materials
-    let mat_ground = lambertian(Color::new(0.8, 0.8, 0.0));
+    let mat_ground = lambertian(Color::new(0.5, 0.5, 0.5));
     let mat_01 = dielectric(1.50);
     let mat_02 = lambertian(Color::new(0.4, 0.2, 0.1));
     let mat_03 = metal(Color::new(0.7, 0.6, 0.5), 0.5);
@@ -43,8 +43,8 @@ fn main() {
     ];
 
     //generate scene
-    for a in 0..11 {
-        for b in 0..11 {
+    for a in -11..11 {
+        for b in -11..11 {
             let choose_mat = random_float();
             let center = glam::vec3(
                 a as f32 + 0.9 * random_float(),
@@ -74,8 +74,9 @@ fn main() {
     }
 
     tracing::info!(
-        "Rendering Image with width: {image_width} & height: {}",
-        (image_width as f32 / aspect_ratio) as u32
+        "Rendering Image with width: {image_width} & height: {}, {} pixels",
+        (image_width as f32 / aspect_ratio) as u32,
+        image_width as f32 * (image_width as f32 / aspect_ratio)
     );
 
     let path = Path::new("output.png");

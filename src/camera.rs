@@ -7,6 +7,7 @@ use crate::{
     random_float, random_in_unit_disk,
     ray::Ray,
 };
+use indicatif::ProgressBar;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::{fs::File, io::BufWriter, sync::Mutex};
 
@@ -83,6 +84,7 @@ impl Camera {
 
         let data = vec![0u8; (self.image_width * self.image_height * 3) as usize];
         let data = Mutex::new(data);
+        let pb = ProgressBar::new(self.image_height as u64 * self.image_width as u64);
         (0..self.image_height).into_par_iter().for_each(|y| {
             for x in 0..self.image_width {
                 let index = ((y * self.image_width + x) * 3) as usize;
@@ -100,8 +102,10 @@ impl Camera {
                 data[index] = pixels.0;
                 data[index + 1] = pixels.1;
                 data[index + 2] = pixels.2;
+                pb.inc(1);
             }
         });
+        pb.finish_with_message("Done.");
         writer.write_image_data(&data.lock().unwrap())?;
 
         Ok(())
