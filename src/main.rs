@@ -2,7 +2,7 @@ use rustracing::{
     camera::Camera,
     color::Color,
     hittable::{sphere, HittableList},
-    material::{lambertian, metal},
+    material::{dielectric, lambertian, metal},
 };
 use std::{fs::File, io::BufWriter, path::Path, time::Instant};
 
@@ -18,7 +18,8 @@ fn main() {
     // Materials
     let mat_ground = lambertian(Color::new(0.8, 0.8, 0.0));
     let mat_center = lambertian(Color::new(0.1, 0.2, 0.5));
-    let mat_left = metal(Color::new(0.8, 0.8, 0.8), 0.3);
+    let mat_left = dielectric(1.50);
+    let mat_bubble = dielectric(1.00 / 1.50);
     let mat_right = metal(Color::new(0.8, 0.6, 0.2), 1.0);
 
     // World
@@ -26,6 +27,7 @@ fn main() {
         sphere(glam::vec3(0.0, -100.5, -1.0), 100.0, mat_ground),
         sphere(glam::vec3(0.0, 0.0, -1.2), 0.5, mat_center),
         sphere(glam::vec3(-1.0, 0.0, -1.0), 0.5, mat_left),
+        sphere(glam::vec3(-1.0, 0.0, -1.0), 0.4, mat_bubble),
         sphere(glam::vec3(1.0, 0.0, -1.0), 0.5, mat_right),
     ];
 
